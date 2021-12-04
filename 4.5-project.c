@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #define TRUE 1
 #define FALSE 0
 
@@ -50,7 +51,6 @@ City_Info read_city() {
     return city;
 }
 
-
 //VERIFICA A QUANTIDADE DE ELEMENTOS, E RETORNA UM INTEIRO
 int number_of_elements(LSE list) {
     Node *curr;
@@ -61,7 +61,6 @@ int number_of_elements(LSE list) {
     }
     return amount;
 }
-
 
 // ALOCA UM NOVO NÓ, E INSERE NA CABEÇA DA LISTA. 
 // RETORNA FALSE CASO NÃO CONSIGA ALOCAR MEMÓRIA.
@@ -77,7 +76,6 @@ int insert_head(LSE *list) {
 
     return TRUE;
 }
-
 
 int insert_end(LSE *list) {
     //se a lista estiver vazia, insere na cabeça
@@ -104,36 +102,22 @@ int insert_end(LSE *list) {
 
 }
 
-
 void print_cities(LSE list) {
     Node *curr;
 
     if(empty(list)) {
-        puts("A listá está vazia!");
         return;
     }
 
     clear_screen();
 
-    puts("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-");
+    puts("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-\n");
     for (curr = list.init; curr != NULL; curr = curr->next) {
-        printf("Nome: %s\n", curr->city.city_name);
+        printf("Nome: %s", curr->city.city_name);
         printf("Coordenadas: (%d,%d)\n\n", curr->city.coord_x, curr->city.coord_y);
     }
-    puts("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-");
+    puts("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-\n\n");
 }
-
-
-int search(LSE list, char *name) {
-    Node *curr = list.init;
-    while (curr != NULL) {
-        if(strcmp(curr->city.city_name, name) == 0) return TRUE;
-
-        curr = curr->next;
-    } 
-    return FALSE;
-}
-
 
 int remove_head(LSE *list, City_Info *city) {
     Node *curr;
@@ -148,7 +132,6 @@ int remove_head(LSE *list, City_Info *city) {
 
     return TRUE;
 }
-
 
 int remove_tail(LSE *list, City_Info *city) {
     Node *curr, *prev = NULL;
@@ -172,7 +155,6 @@ int remove_tail(LSE *list, City_Info *city) {
 
     return TRUE;
 }
-
 
 int remove_element(LSE *list, char *name, City_Info *city) {
     Node *prev, *curr;
@@ -198,6 +180,82 @@ int remove_element(LSE *list, char *name, City_Info *city) {
     return FALSE;
 }
 
+int remove_by_coordinate(LSE *list, int x, int y, City_Info *city) {
+    Node *prev, *curr;
+
+    if(empty(*list)) return FALSE;
+
+    prev = NULL;
+    curr = list->init;
+
+    while (curr != NULL) {
+        if(curr->city.coord_x == x && curr->city.coord_y == y) {
+            if(prev == NULL) return remove_head(list, city);
+
+            prev->next = curr->next;
+            *city = curr->city;
+
+            free(curr);
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+    return FALSE;
+}
+
+int search(LSE list, char *name) {
+    Node *curr = list.init;
+    while (curr != NULL) {
+        if(strcmp(curr->city.city_name, name) == 0) return TRUE;
+
+        curr = curr->next;
+    } 
+    return FALSE;
+}
+
+void search_coordinate(LSE list, int x, int y) {
+    Node *curr = list.init;
+
+    while (curr != NULL) {
+        if(curr->city.coord_x == x && curr->city.coord_y == y) {
+            puts("\n-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=--=-=-");
+            puts("A cidade está no banco!");
+            printf("Nome: %s", curr->city.city_name);
+            printf("Coordenadas: (%d,%d)\n", curr->city.coord_x, curr->city.coord_y);
+            puts("-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=--=-=-\n\n");
+
+            return;
+        }
+
+        curr = curr->next;
+    }
+    return;
+}
+
+double calculate_distance(int x1, int x2, int y1, int y2) {
+    double ans = sqrt(pow((x2 - x1), 2) + (pow((y2 - y1), 2)));
+    return ans;
+}
+
+int search_by_distance(LSE list, int x, int y, int radius) {
+    Node *curr = list.init;
+    double dist;
+
+    puts("\n-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=--=-=-");
+    while (curr != NULL) {
+        dist = calculate_distance(curr->city.coord_x, x, curr->city.coord_y, y);
+        if(dist <= (double) radius && dist > 0) {
+            // puts("A cidade está no banco!");
+            printf("Nome: %s", curr->city.city_name);
+            printf("Coordenadas: (%d,%d)\n", curr->city.coord_x, curr->city.coord_y);
+            printf("Distância: %.2lf\n\n", dist);
+        }
+        curr = curr->next;
+    }
+    puts("-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=--=-=-\n\n");
+    
+    return FALSE;
+}
 
 int menu() {
     int choice;
@@ -205,15 +263,12 @@ int menu() {
     puts("****************************************************");
     puts("\n-----------------------MENU-------------------------\n");
     puts("[1] Limpar tela");
-    puts("[2] Verificar se a lista está vazia");
-    puts("[3] Verificar quantidade de elementos");
-    puts("[4] Inserir nova cidade no início da lista");
-    puts("[5] Inserir nova cidade no fim da lista");
-    puts("[6] Imprimir lista");
-    puts("[7] Pesquisar elemento");
-    puts("[8] Remover cabeça");
-    puts("[9] Remover cauda");
-    puts("[10] Remover elemento\n");
+    puts("[2] Adicionar nova cidade");
+    puts("[3] Pesquisar cidade");
+    puts("[4] Remover cidade");
+    puts("[5] Imprimir lista de cidades");
+    puts("[6] Pesquisar cidades num raio");
+    puts("[7] Verificar quantidade de cidades\n\n");
     puts("****************************************************");
     printf("Opção: ");
     scanf("%d", &choice);
@@ -224,7 +279,7 @@ int menu() {
 
 
 int main() {
-    int option = 0;
+    int option = 0, choice, x, y, dist;
     char pesquisa[50];
 
     City_Info cidade;
@@ -239,54 +294,93 @@ int main() {
         option = menu();
     
         switch (option) {
-        case 2:
-            if(empty(list)) {
-                printf("A lista está vazia!\n");
-            } else {
-                printf("A lista contém elementos!\n");
-            }
-            break;
-        case 3:
-            printf("%d\n", number_of_elements(list));
-            break;
-        
-        case 4:           
-            if (!insert_head(&list)) puts("Memória isuficiente!");            
-            break;
-        
-        case 5:
-            if (!insert_end(&list)) puts("Memória isuficiente!");
-            break;
-        
-        case 6:
-            print_cities(list);
-            break;
+            case 7: // QUANTIDADE DE ITEMS
+                clear_screen();
+                printf("Quantidade atual de cidades: %d\n", number_of_elements(list));
+                break;
+            
+            case 2: //INSERIR NA LISTA
+                clear_screen();
+                if (!insert_end(&list)) {
+                    puts("Memória isuficiente!");
+                } else {
+                    puts("Adicionada com sucesso!");
+                }
+                break;
+            
+            case 5: // IMPRIMIR LISTA
+                print_cities(list);
+                break;
 
-        case 7:
-            printf("Digite o nome da cidade: ");
-            fgets(pesquisa, 50, stdin);
-            search(list, pesquisa) ? puts("A cidade está na lista") : puts("A cidade não está na lista");
-            break;
-        case 8:
-            remove_head(&list, &cidade) ? puts("Removido!") : puts("Ops.. Algo deu errado!");
-            break;
-        
-        case 9:
-            remove_tail(&list, &cidade) ? puts("Removido!") : puts("Ops.. Algo deu errado!");
-            break;
+            case 3: // PESQUISAR CIDADE
+                clear_screen();
+                //puts("")
+                puts("[1] Pesquisa por coordenada");
+                puts("[2] Pesquisa por nome");
+                printf("Digite a opção: ");
+                scanf("%d", &choice);
+                getchar();
+                switch(choice) {
+                    case 1:
+                        printf("Digite as coordenadas: ");
+                        scanf("%d%d", &x, &y);
+                        getchar();
+                        search_coordinate(list, x, y);
+                        break;
+                    case 2:
+                        printf("Digite o nome da cidade: ");
+                        fgets(pesquisa, 50, stdin);
+                        search(list, pesquisa) ? puts("A cidade está na lista") : puts("A cidade não está na lista");
+                        break;
+                    default:
+                        break;
+                }
 
-        case 10:
-            printf("Digite o nome da cidade: ");
-            fgets(pesquisa, 50, stdin);
-            printf("\n%d\n\n", remove_element(&list, pesquisa, &cidade)); 
-            remove_element(&list, pesquisa, &cidade) == 1 ? puts("Removido!") : puts("Ops.. Algo deu errado!");
-            break;
-        
-        case 1:
-            clear_screen();
+                
+                break;
 
-        default:
-            break;
+            case 4: // REMOVER DA LISTA
+                clear_screen();
+                puts("[1] Remover por coordenada");
+                puts("[2] Remover por nome");
+                printf("Digite a opção: ");
+                scanf("%d", &choice);
+                getchar();
+                switch(choice) {
+                    case 1:
+                        printf("Digite as coordenadas: ");
+                        scanf("%d%d", &x, &y);
+                        getchar();
+                        if(remove_by_coordinate(&list, x, y, &cidade)) puts("\nRemovido!\n");
+                        break;
+                    case 2:
+                        printf("Digite o nome da cidade: ");
+                        fgets(pesquisa, 50, stdin);
+                        if(remove_element(&list, pesquisa, &cidade)) puts("Removido!");
+                        break;
+
+                    default:
+                        break;
+                }
+                break;
+            
+            case 6:
+                clear_screen();
+                printf("Digite as coordenadas de um ponto: ");
+                scanf("%d%d", &x, &y);
+                printf("Digite a distancia do raio de pesquisa: ");
+                scanf("%d", &dist);
+
+                if(!search_by_distance(list, x, y, dist)){
+                    puts("Nenhuma cidade encontrada dentro do raio!");
+                }
+                break;
+
+            case 1:
+                clear_screen();
+                break;
+            default:
+                break;
         }
     }
     
